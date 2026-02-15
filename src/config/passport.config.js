@@ -7,7 +7,7 @@ import { isValidPassword } from "../utils/bcrypt.js";
 const SECRET = "secretJWT";
 
 export const initializePassport = () => {
-    // Login
+  // Login
   passport.use(
     "login",
     new LocalStrategy(
@@ -39,7 +39,7 @@ export const initializePassport = () => {
     "jwt",
     new JwtStrategy(
       {
-        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+        jwtFromRequest: ExtractJwt.fromExtractors([(req) => req?.cookies?.jwt]),
         secretOrKey: SECRET,
       },
       async (jwt_payload, done) => {

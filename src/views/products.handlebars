@@ -1,49 +1,48 @@
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Productos</title>
-  </head>
-  <body>
-    <h1>Lista de Productos</h1>
-    <a href="/cart/{{cartId}}">Ir al carrito</a>
-    <ul>
-      {{#each products}}
-        <li>
-          <strong>{{this.title}}</strong>
-          - ${{this.price}}
-          <button class="add-to-cart" data-product="{{this._id}}">Agregar al
-            carrito</button>
-        </li>
-      {{/each}}
-    </ul>
-    <div>
-      {{#if hasPrevPage}}
-        <a href="?page={{prevPage}}">Anterior</a>
-      {{/if}}
-      <span>Página {{page}} de {{totalPages}}</span>
-      {{#if hasNextPage}}
-        <a href="?page={{nextPage}}">Siguiente</a>
-      {{/if}}
-    </div>
-    <a href="/realtimeproducts">Ver productos en tiempo real</a>
 
-    <script>
+<head>
+  <meta charset="utf-8" />
+  <title>Productos</title>
+</head>
+
+<body>
+  <h1>Lista de Productos</h1>
+  <a href="/cart">Ir al carrito</a>
+  <ul>
+    {{#each products}}
+    <li>
+      <strong>{{this.title}}</strong>
+      - ${{this.price}}
+      <button class="add-to-cart" data-product="{{this._id}}">Agregar al
+        carrito</button>
+    </li>
+    {{/each}}
+  </ul>
+  <div>
+    {{#if hasPrevPage}}
+    <a href="?page={{prevPage}}">Anterior</a>
+    {{/if}}
+    <span>Página {{page}} de {{totalPages}}</span>
+    {{#if hasNextPage}}
+    <a href="?page={{nextPage}}">Siguiente</a>
+    {{/if}}
+  </div>
+  <a href="/realtimeproducts">Ver productos en tiempo real</a>
+
+  <script>
     const buttons = document.querySelectorAll(".add-to-cart");
 
     buttons.forEach(btn => {
       btn.addEventListener("click", async () => {
         const productId = btn.dataset.product;
-        const cartId = "{{cartId}}";
 
         try {
-          // Llamada POST al endpoint de carrito
-          const res = await fetch(`/api/carts/${cartId}/product/${productId}`, {
+          const res = await fetch(`/api/carts/current/product/${productId}`, {
             method: "POST"
           });
 
           if (res.ok) {
-            // Redirigir al carrito
-            window.location.href = `/cart/${cartId}`;
+            window.location.href = `/cart`;
           } else {
             alert("Error agregando el producto al carrito");
           }
@@ -55,5 +54,6 @@
     });
   </script>
 
-  </body>
+</body>
+
 </html>

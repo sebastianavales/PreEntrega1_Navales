@@ -4,19 +4,22 @@ import { engine } from "express-handlebars";
 import { Server } from "socket.io";
 import path from "path";
 import { fileURLToPath } from "url";
-import passport from 'passport';
+import passport from "passport";
+import cookieParser from "cookie-parser";
 
 import ProductModel from "./models/product.model.js";
 import productsRouter from "./routes/products.router.js";
 import cartsRouter from "./routes/carts.router.js";
 import viewsRouter from "./routes/views.router.js";
-import { initializePassport } from './config/passport.config.js';
-import sessionsRouter from './routes/sessions.router.js';
-import usersRouter from './routes/users.router.js';
+import { initializePassport } from "./config/passport.config.js";
+import sessionsRouter from "./routes/sessions.router.js";
+import usersRouter from "./routes/users.router.js";
 
 // Conexión a MongoDB
 try {
-  await mongoose.connect("mongodb+srv://sebastiannavalesp_db_user:RDOFtKIw10VAyCs7@cluster0.egkpgp4.mongodb.net/BD_BE2?retryWrites=true&w=majority");
+  await mongoose.connect(
+    "mongodb+srv://sebastiannavalesp_db_user:WfpVi0O1IgWw2nD1@cluster0.egkpgp4.mongodb.net/BD_BE2?retryWrites=true&w=majority",
+  );
   console.log("Conectado a MongoDB");
 } catch (err) {
   console.error("Error al conectar a MongoDB:", err);
@@ -34,6 +37,9 @@ const PORT = 8080;
 initializePassport();
 app.use(passport.initialize());
 
+// Inicialización de cookie parser
+app.use(cookieParser());
+
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -48,8 +54,8 @@ app.set("views", path.join(__dirname, "views"));
 app.use("/api/products", productsRouter);
 app.use("/api/carts", cartsRouter);
 app.use("/", viewsRouter);
-app.use('/api/sessions', sessionsRouter);
-app.use('/api/users', usersRouter);
+app.use("/api/sessions", sessionsRouter);
+app.use("/api/users", usersRouter);
 
 // Servidor HTTP + Socket.io
 const httpServer = app.listen(PORT, () => {
