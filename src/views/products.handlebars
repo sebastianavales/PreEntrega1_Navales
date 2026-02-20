@@ -1,59 +1,103 @@
-<html>
+<html lang="es">
 
-<head>
-  <meta charset="utf-8" />
-  <title>Productos</title>
-</head>
+  <head>
+    <meta charset="utf-8" />
+    <title>Productos</title>
+  </head>
 
-<body>
-  <h1>Lista de Productos</h1>
-  <a href="/cart">Ir al carrito</a>
-  <ul>
-    {{#each products}}
-    <li>
-      <strong>{{this.title}}</strong>
-      - ${{this.price}}
-      <button class="add-to-cart" data-product="{{this._id}}">Agregar al
-        carrito</button>
-    </li>
-    {{/each}}
-  </ul>
-  <div>
-    {{#if hasPrevPage}}
-    <a href="?page={{prevPage}}">Anterior</a>
-    {{/if}}
-    <span>Página {{page}} de {{totalPages}}</span>
-    {{#if hasNextPage}}
-    <a href="?page={{nextPage}}">Siguiente</a>
-    {{/if}}
-  </div>
-  <a href="/realtimeproducts">Ver productos en tiempo real</a>
+  <body>
 
-  <script>
-    const buttons = document.querySelectorAll(".add-to-cart");
+    <main
+      style="max-width: 900px; margin: 40px auto; font-family: Arial, sans-serif;"
+    >
 
-    buttons.forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const productId = btn.dataset.product;
+      <header
+        style="display:flex; justify-content:space-between; align-items:center;"
+      >
+        <h1>Catálogo de Productos</h1>
 
-        try {
-          const res = await fetch(`/api/carts/current/product/${productId}`, {
-            method: "POST"
-          });
+        <div>
+          <a href="/cart" style="margin-right:15px;">🛒 Ver carrito</a>
+          <a href="/api/sessions/current">👤 Mi perfil</a>
+          <a href="/api/sessions/logout">🚪 Cerrar sesión</a>
+        </div>
+      </header>
 
-          if (res.ok) {
-            window.location.href = `/cart`;
-          } else {
-            alert("Error agregando el producto al carrito");
-          }
-        } catch (error) {
-          console.error(error);
-          alert("Error agregando el producto al carrito");
-        }
-      });
-    });
-  </script>
+      <hr />
 
-</body>
+      {{#if products.length}}
+
+        <ul style="list-style:none; padding:0;">
+
+          {{#each products}}
+            <li
+              style="border:1px solid #ddd; padding:15px; margin-bottom:10px;"
+            >
+
+              <h3 style="margin:0 0 8px 0;">{{this.title}}</h3>
+
+              <p style="margin:4px 0;">
+                <strong>Precio:</strong>
+                ${{this.price}}
+              </p>
+
+              <p style="margin:4px 0;">
+                <strong>Categoría:</strong>
+                {{this.category}}
+              </p>
+
+              <p style="margin:4px 0;">
+                <strong>Stock:</strong>
+                {{this.stock}}
+              </p>
+
+              <button
+                class="add-to-cart"
+                data-product="{{this._id}}"
+                style="margin-top:8px;"
+              >
+                Agregar al carrito
+              </button>
+
+            </li>
+          {{/each}}
+
+        </ul>
+
+      {{else}}
+        <p>No hay productos disponibles</p>
+      {{/if}}
+
+      <!-- paginación -->
+      <section style="margin-top:30px; text-align:center;">
+
+        {{#if hasPrevPage}}
+          <a href="?page={{prevPage}}&limit={{limit}}">⬅ Anterior</a>
+        {{/if}}
+
+        <span style="margin:0 15px;">
+          Página
+          {{page}}
+          de
+          {{totalPages}}
+        </span>
+
+        {{#if hasNextPage}}
+          <a href="?page={{nextPage}}&limit={{limit}}">Siguiente ➡</a>
+        {{/if}}
+
+      </section>
+
+      <hr style="margin:30px 0;" />
+
+      <footer style="text-align:center;">
+        <a href="/realtimeproducts">📡 Vista en tiempo real</a>
+      </footer>
+
+    </main>
+
+    <script src="/js/products.js"></script>
+
+  </body>
 
 </html>

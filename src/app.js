@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import passport from "passport";
 import cookieParser from "cookie-parser";
 
+import "./config/env.config.js";
 import ProductModel from "./models/product.model.js";
 import productsRouter from "./routes/products.router.js";
 import cartsRouter from "./routes/carts.router.js";
@@ -17,9 +18,7 @@ import usersRouter from "./routes/users.router.js";
 
 // Conexión a MongoDB
 try {
-  await mongoose.connect(
-    "mongodb+srv://sebastiannavalesp_db_user:WfpVi0O1IgWw2nD1@cluster0.egkpgp4.mongodb.net/BD_BE2?retryWrites=true&w=majority",
-  );
+  await mongoose.connect(process.env.MONGO_URI);
   console.log("Conectado a MongoDB");
 } catch (err) {
   console.error("Error al conectar a MongoDB:", err);
@@ -31,7 +30,7 @@ const __dirname = path.dirname(__filename);
 
 // Inicialización de Express
 const app = express();
-const PORT = 8080;
+const PORT = process.env.PORT;
 
 // Inicialización de Passport
 initializePassport();
@@ -44,6 +43,8 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 // Motor de plantillas
 app.engine("handlebars", engine());

@@ -12,8 +12,8 @@ router.get(
   async (req, res) => {
     try {
       let { limit = 10, page = 1, sort, query } = req.query;
-      limit = parseInt(limit);
-      page = parseInt(page);
+      limit = parseInt(limit) || 10;
+      page = parseInt(page) || 1;
 
       const filter = {};
       if (query) {
@@ -40,6 +40,7 @@ router.get(
         products,
         page,
         totalPages,
+        limit,
         hasPrevPage: page > 1,
         hasNextPage: page < totalPages,
         prevPage: page - 1,
@@ -107,6 +108,11 @@ router.get("/", (req, res) => {
 });
 router.get("/login", (req, res) => {
   res.render("login");
+});
+
+// Vista recuperar contraseña
+router.get("/forgot-password", (req, res) => {
+  res.render("forgotPassword");
 });
 
 export default router;

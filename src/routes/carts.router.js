@@ -1,8 +1,12 @@
 import { Router } from "express";
 import mongoose from "mongoose";
+import passport from "passport";
+
 import CartModel from "../models/cart.model.js";
 import ProductModel from "../models/product.model.js";
-import passport from "passport";
+import { authorize } from "../middlewares/authorization.js";
+import TicketModel from "../models/ticket.model.js";
+import { generateTicketCode } from "../utils/ticketCode.js";
 
 // Instancia del router de Express
 const router = Router();
@@ -40,6 +44,7 @@ router.get("/:cid", async (req, res) => {
 router.post(
   "/current/product/:pid",
   passport.authenticate("jwt", { session: false }),
+  authorize("user"),
   async (req, res) => {
     try {
       const { pid } = req.params;
@@ -190,5 +195,66 @@ router.delete("/:cid", async (req, res) => {
     res.status(500).json({ error: "Error al vaciar carrito" });
   }
 });
+
+// POST /api/carts/current/purchase - Crear una orden de compra
+router.post(
+  "/current/purchase",
+  passport.authenticate("jwt", { session: false }),
+  authorize("user"),
+  async (req, res) => {
+    try {
+      const cid = req.user.cart;
+
+      const cart = await CartModel.findById(cid).populate("products.product");
+      if (!cart)
+        return res.status(404).json({ error: "Carrito no encontrado" });
+
+      let total = 0;
+      const productsNotPurchased = [];
+      const purchasedProducts = [];
+
+      for (const item of cart.products) {
+        const product = item.product;
+        const qty = item.quantity;
+
+        if (product.stock >= qty) {
+          product.stock -= qty;
+          await product.save();
+
+          total += product.price * qty;
+          purchasedProducts.push(item);
+        } else {
+          productsNotPurchased.push(item);
+        }
+      }
+
+      // Actualizar carrito solo con los NO comprados
+      cart.products = productsNotPurchased;
+      await cart.save();
+
+      if (total === 0) {
+        return res.status(400).json({
+          error: "No hay productos con stock suficiente",
+          productsNotPurchased,
+        });
+      }
+
+      const ticket = await TicketModel.create({
+        code: generateTicketCode(),
+        amount: total,
+        purchaser: req.user.email,
+      });
+
+      res.json({
+        status: "success",
+        ticket,
+        productsNotPurchased,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Error al procesar compra" });
+    }
+  },
+);
 
 export default router;

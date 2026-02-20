@@ -1,13 +1,78 @@
-<h2>Login</h2>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Login</title>
+  </head>
 
-<form id="loginForm">
-  <input type="email" name="email" placeholder="Email" required />
-  <br /><br />
-  <input type="password" name="password" placeholder="Password" required />
-  <br /><br />
-  <button type="submit">Ingresar</button>
-</form>
+  <body>
 
-<p id="message"></p>
+    <main
+      style="max-width: 420px; margin: 60px auto; font-family: Arial, sans-serif;"
+    >
 
-<script src="/js/login.js"></script>
+      <h1>Iniciar sesión</h1>
+
+      {{#if error}}
+        <div
+          style="background:#ffe6e6; border:1px solid #ffb3b3; padding:10px; margin-bottom:15px;"
+        >
+          {{error}}
+        </div>
+      {{/if}}
+
+      {{#if message}}
+        <div
+          style="background:#e6ffed; border:1px solid #b7f5c5; padding:10px; margin-bottom:15px;"
+        >
+          {{message}}
+        </div>
+      {{/if}}
+
+      <form id="loginForm">
+
+        <div>
+          <label>Email</label><br />
+          <input
+            type="email"
+            name="email"
+            placeholder="tu@email.com"
+            required
+            style="width:100%; padding:8px;"
+          />
+        </div>
+
+        <br />
+
+        <div>
+          <label>Contraseña</label><br />
+          <input
+            type="password"
+            name="password"
+            placeholder="••••••••"
+            required
+            style="width:100%; padding:8px;"
+          />
+        </div>
+
+        <br />
+
+        <button type="submit" style="width:100%; padding:10px;">
+          Ingresar
+        </button>
+
+      </form>
+
+      <p id="message" style="margin-top:15px;"></p>
+
+      <hr style="margin:25px 0;" />
+
+      <div style="display:flex; justify-content:space-between;">
+        <a href="/forgot-password">Olvidé mi contraseña</a>
+      </div>
+
+    </main>
+
+    <script src="/js/login.js"></script>
+
+  </body>
+</html>

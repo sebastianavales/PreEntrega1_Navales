@@ -1,7 +1,11 @@
 import { Router } from "express";
-import ProductModel from "../models/product.model.js";
+import passport from "passport";
+
+import ProductRepository from "../repositories/product.repository.js";
+import { authorize } from "../middlewares/authorization.js";
 
 const router = Router();
+const productRepo = new ProductRepository();
 
 // GET /api/products
 router.get("/", async (req, res) => {
@@ -27,14 +31,15 @@ router.get("/", async (req, res) => {
     if (sort === "asc") sortOption.price = 1;
     else if (sort === "desc") sortOption.price = -1;
 
-    const totalProducts = await ProductModel.countDocuments(filter);
+    const totalProducts = await productRepo.countProducts(filter);
     const totalPages = Math.ceil(totalProducts / limit);
     const skip = (page - 1) * limit;
 
-    const products = await ProductModel.find(filter)
-      .sort(sortOption)
-      .skip(skip)
-      .limit(limit);
+    const products = await productRepo.getProducts(filter, {
+      sort: sortOption,
+      skip,
+      limit,
+    });
 
     // Construir links
     const baseUrl = `${req.protocol}://${req.get("host")}${req.path}`;
@@ -63,7 +68,7 @@ router.get("/", async (req, res) => {
 // GET /api/products/:pid
 router.get("/:pid", async (req, res) => {
   try {
-    const producto = await ProductModel.findById(req.params.pid);
+    const producto = await productRepo.getProductById(req.params.pid);
     if (!producto)
       return res.status(404).json({ error: "Producto no encontrado" });
 
@@ -74,30 +79,36 @@ router.get("/:pid", async (req, res) => {
 });
 
 // POST /api/products
-router.post("/", async (req, res) => {
-  try {
-    const nuevoProducto = await ProductModel.create(req.body);
+router.post("/",
+  passport.authenticate("jwt", { session: false }),
+  authorize("admin"),
+  async (req, res) => {
+    try {
+      const nuevoProducto = await productRepo.createProduct(req.body);
 
-    // Emitir actualización vía WebSocket
-    const io = req.app.get("io");
-    if (io) {
-      const productosActualizados = await ProductModel.find();
-      io.emit("updateProducts", productosActualizados);
+      // Emitir actualización vía WebSocket
+      const io = req.app.get("io");
+      if (io) {
+        const productosActualizados = await productRepo.getProducts({}, {});
+        io.emit("updateProducts", productosActualizados);
+      }
+
+      res.status(201).json(nuevoProducto);
+    } catch (error) {
+      res.status(400).json({ error: "Datos inválidos o código duplicado" });
     }
-
-    res.status(201).json(nuevoProducto);
-  } catch (error) {
-    res.status(400).json({ error: "Datos inválidos o código duplicado" });
-  }
-});
+  },
+);
 
 // PUT /api/products/:pid
-router.put("/:pid", async (req, res) => {
+router.put("/:pid",
+  passport.authenticate("jwt", { session: false }),
+  authorize("admin"),
+  async (req, res) => {
   try {
-    const productoActualizado = await ProductModel.findByIdAndUpdate(
+    const productoActualizado = await productRepo.updateProduct(
       req.params.pid,
       req.body,
-      { new: true }
     );
 
     if (!productoActualizado)
@@ -105,7 +116,7 @@ router.put("/:pid", async (req, res) => {
 
     const io = req.app.get("io");
     if (io) {
-      const productosActualizados = await ProductModel.find();
+      const productosActualizados = await productRepo.getProducts({}, {});
       io.emit("updateProducts", productosActualizados);
     }
 
@@ -116,16 +127,19 @@ router.put("/:pid", async (req, res) => {
 });
 
 // DELETE /api/products/:pid
-router.delete("/:pid", async (req, res) => {
+router.delete("/:pid",
+  passport.authenticate("jwt", { session: false }),
+  authorize("admin"),
+  async (req, res) => {
   try {
-    const eliminado = await ProductModel.findByIdAndDelete(req.params.pid);
+    const eliminado = await productRepo.deleteProduct(req.params.pid);
 
     if (!eliminado)
       return res.status(404).json({ error: "Producto no encontrado" });
 
     const io = req.app.get("io");
     if (io) {
-      const productosActualizados = await ProductModel.find();
+      const productosActualizados = await productRepo.getProducts({}, {});
       io.emit("updateProducts", productosActualizados);
     }
 

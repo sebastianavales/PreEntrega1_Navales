@@ -1,13 +1,44 @@
-<html>
-  <head><meta charset="utf-8" /><title>Real Time Products</title></head>
+<html lang="es">
+
+  <head>
+    <meta charset="utf-8" />
+    <title>Productos en tiempo real</title>
+  </head>
+
   <body>
-    <h1>Productos en tiempo real</h1>
 
-    <ul id="productList"></ul>
+    <main
+      style="max-width: 900px; margin: 40px auto; font-family: Arial, sans-serif;"
+    >
 
-    <a href="/products">Volver a inicio</a>
+      <header
+        style="display:flex; justify-content:space-between; align-items:center;"
+      >
+        <h1>Productos en Tiempo Real</h1>
+
+        <div>
+          <a href="/products" style="margin-right:15px;">📦 Productos</a>
+          <a href="/cart">🛒 Carrito</a>
+        </div>
+      </header>
+
+      <hr />
+
+      <p>
+        Esta vista se actualiza automáticamente cuando se crean, editan o
+        eliminan productos desde la API.
+      </p>
+
+      <ul id="productList" style="list-style:none; padding:0; margin-top:20px;">
+      </ul>
+
+      <hr style="margin:30px 0;" />
+
+    </main>
 
     <script src="/socket.io/socket.io.js"></script>
+
     <script src="/js/realTime.js"></script>
+
   </body>
 </html>

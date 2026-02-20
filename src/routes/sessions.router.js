@@ -1,14 +1,15 @@
 import { Router } from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 import { User } from "../models/user.model.js";
 import CartModel from "../models/cart.model.js";
-import { createHash } from "../utils/bcrypt.js";
+import { createHash, isValidPassword } from "../utils/bcrypt.js";
+import UserDTO from "../dto/user.dto.js";
+import { transporter } from "../utils/mailer.js";
 
 const router = Router();
-
-const SECRET = "secretJWT";
 
 // Register
 router.post("/register", async (req, res) => {
@@ -70,14 +71,18 @@ router.post("/login", (req, res, next) => {
       });
     }
 
-    const token = jwt.sign({ id: user._id, role: user.role }, SECRET, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1h",
+      },
+    );
 
     res
       .cookie("jwt", token, {
         httpOnly: true,
-        maxAge: 60 * 60 * 1000, // 1 hora
+        maxAge: 60 * 60 * 1000,
       })
       .json({
         message: "Login exitoso",
@@ -85,21 +90,85 @@ router.post("/login", (req, res, next) => {
   })(req, res, next);
 });
 
+// Logout
+router.get("/logout", (req, res) => {
+  res.clearCookie("jwt");
+  res.redirect("/login");
+});
+
 // Current
 router.get(
   "/current",
   passport.authenticate("jwt", { session: false }),
   (req, res) => {
-    res.status(200).json({
-      user: {
-        first_name: req.user.first_name,
-        last_name: req.user.last_name,
-        email: req.user.email,
-        role: req.user.role,
-        cart: req.user.cart,
-      },
-    });
+    const userDto = new UserDTO(req.user);
+    res.json(userDto);
   },
 );
+
+// Forgot password
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.json({ message: "Si el email existe, se enviará link" });
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+
+  user.resetToken = token;
+  user.resetTokenExp = Date.now() + 3600000;
+  await user.save();
+
+  const link = `${process.env.BASE_URL}/api/sessions/reset-password/${token}`;
+
+  await transporter.sendMail({
+    to: user.email,
+    subject: "Recuperar contraseña",
+    html: `
+      <h2>Recuperar contraseña</h2>
+      <a href="${link}">
+        <button>Restablecer contraseña</button>
+      </a>
+    `,
+  });
+
+  res.json({ message: "Correo enviado" });
+});
+
+// Reset password
+router.post("/reset-password", async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  const user = await User.findOne({
+    resetToken: token,
+    resetTokenExp: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(400).json({ error: "Token inválido o expirado" });
+  }
+
+  if (isValidPassword(user, newPassword)) {
+    return res.status(400).json({
+      error: "No puedes usar la misma contraseña",
+    });
+  }
+
+  user.password = createHash(newPassword);
+  user.resetToken = undefined;
+  user.resetTokenExp = undefined;
+
+  await user.save();
+
+  res.json({ message: "Contraseña actualizada" });
+});
+
+// Change password
+router.get("/reset-password/:token", (req, res) => {
+  const { token } = req.params;
+  res.render("resetPassword", { token });
+});
 
 export default router;
